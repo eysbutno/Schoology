@@ -3,6 +3,9 @@ name: Update Grades
 on:
   workflow_dispatch: # allows manual triggering
 
+permissions:
+  contents: write
+  
 jobs:
   scrape:
     runs-on: ubuntu-latest
