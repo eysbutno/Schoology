@@ -25,12 +25,24 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
+      - name: Restore session state
+        uses: actions/download-artifact@v4
+        with:
+          name: session-state
+        continue-on-error: true
+
       - name: Run scraper
         env:
           GOOGLE_USER: ${{ secrets.GOOGLE_USER }}
           GOOGLE_PASS: ${{ secrets.GOOGLE_PASS }}
         run: |
           npx ts-node scrape.ts
+
+      - name: Save session state
+        uses: actions/upload-artifact@v4
+        with:
+          name: session-state
+          path: state.json
 
       - name: Commit & push updated grades
         run: |

@@ -5,6 +5,3 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-
-# Ignore Playwright storage state
-state.json

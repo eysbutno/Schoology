@@ -47,7 +47,7 @@ const statePath = './state.json';
 
       const chooseAccountExists = await page.locator('text=Choose an account').count() > 0;
 
-      if (chooseAccountExists) {
+      if (!chooseAccountExists) {
         // fill email
         await page.waitForSelector('input[type="email"]', { timeout: 10000 });
         await page.fill('input[type="email"]', email);
