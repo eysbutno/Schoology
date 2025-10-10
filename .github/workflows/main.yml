@@ -25,7 +25,7 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      # Restore session.json from cache
+      # restore state.json from cache
       - name: Restore session state
         uses: actions/cache@v3
         with:
@@ -40,7 +40,7 @@ jobs:
           GOOGLE_PASS: ${{ secrets.GOOGLE_PASS }}
         run: npx ts-node scrape.ts
 
-      # Save updated session.json to cache automatically
+      # save updated state.json to cache automatically
       - name: Save session state to cache
         uses: actions/cache@v3
         with:
