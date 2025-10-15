@@ -6,6 +6,7 @@ chromium.use(StealthPlugin());
 
 const base_url = 'https://fuhsd.schoology.com';
 const state_path = './state.json';
+const grade_path = './grades.json';
 
 (async () => {
   const email = process.env.GOOGLE_USER;
@@ -88,14 +89,41 @@ const state_path = './state.json';
       elements.map(el => el.textContent?.trim())
     );
 
+    type Course = { name: string; grade: string; update: number };
+
+    let prev_grades: Course[] | null = null;
+    if (fs.existsSync(grade_path)) {
+      try {
+        const data = fs.readFileSync(grade_path, 'utf-8');
+        if (data.trim().length > 0) {
+          prev_grades = JSON.parse(data);
+          console.log("Loaded previous grades:", prev_grades);
+        }
+      } catch (err) { 
+        console.error("Error reading or parsing grades.json", err);
+      }
+    }
+
     // combine into objects
-    const courses = course_names.map((name, i) => ({
-      name: name.split(" - ")[0], // keep text before dash
-      grade: course_grades[i] ?? "N/A"
-    })).filter(course => course.grade !== "N/A");
+    const courses = course_names.map((name, i) => {
+      const cleaned_name = name.split(" - ")[0]; // keep text before dash
+      const grade = course_grades[i] ?? "N/A";
+
+      // find previous entry by name
+      const prev_course = prev_grades?.find(c => c.name === cleaned_name);
+      const update = (prev_course && prev_course.grade === grade) 
+        ? prev_course.update 
+        : Date.now();
+
+      return { name: cleaned_name, grade, update };
+    }).filter(course => course.grade !== "N/A");
 
     console.log("Courses & Grades:", courses);
 
+    const output = {
+      last_pulled: new Date().toISOString(),
+      courses
+    };
     const user_json = JSON.stringify(courses);
     fs.writeFile('grades.json', user_json, (err) => {
       if (err) {
