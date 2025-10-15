@@ -96,7 +96,7 @@ const grade_path = './grades.json';
       try {
         const data = fs.readFileSync(grade_path, 'utf-8');
         if (data.trim().length > 0) {
-          prev_grades = JSON.parse(data);
+          prev_grades = JSON.parse(data).courses;
           console.log("Loaded previous grades:", prev_grades);
         }
       } catch (err) { 
@@ -118,12 +118,12 @@ const grade_path = './grades.json';
       return { name: cleaned_name, grade, update };
     }).filter(course => course.grade !== "N/A");
 
-    console.log("Courses & Grades:", courses);
-
     const output = {
       last_pulled: Date.now(),
       courses
     };
+
+    console.log("Courses & Grades:", output);
 
     fs.writeFile('grades.json', JSON.stringify(output), (err) => {
       if (err) {
