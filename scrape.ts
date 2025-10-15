@@ -121,11 +121,11 @@ const grade_path = './grades.json';
     console.log("Courses & Grades:", courses);
 
     const output = {
-      last_pulled: new Date().toISOString(),
+      last_pulled: Date.now(),
       courses
     };
-    const user_json = JSON.stringify(courses);
-    fs.writeFile('grades.json', user_json, (err) => {
+
+    fs.writeFile('grades.json', JSON.stringify(output), (err) => {
       if (err) {
         console.log("Error writing file: ", err);
       } else {

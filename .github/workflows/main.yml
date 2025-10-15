@@ -50,3 +50,19 @@ jobs:
         with:
           path: state.json
           key: session-state-${{ runner.os }}-${{ github.ref }}
+
+      # commit any updates to grades, if any
+      - name: Commit and push grades.json changes
+        run: |
+          # Configure Git user for automated commits
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # stage only grades.json
+          git add grades.json
+
+          # commit only if there are changes
+          git diff --cached --quiet || git commit -m "Update grades"
+
+          # Push to the current branch
+          git push
