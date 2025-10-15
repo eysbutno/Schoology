@@ -84,7 +84,7 @@ for (const grade_obj of grades) {
   course_stack.addSpacer();
 
   const grade_stack = row_stack.addStack();
-  grade_stack.size = new Size(100, NORMAL_FONT + 3);
+  grade_stack.size = new Size(80, NORMAL_FONT + 3);
   const grade_text = grade_stack.addText(grade_obj.grade);
   grade_text.font = Font.mediumSystemFont(NORMAL_FONT);
   grade_text.textColor = grade_color(grade_obj.grade);
