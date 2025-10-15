@@ -131,7 +131,7 @@ const grade_path = './grades.json';
       } else {
         console.log("Successfully wrote file.")
       }
-    })
+    });
   } catch (err) {
     console.error("Error:", err);
   } finally {
