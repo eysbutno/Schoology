@@ -59,15 +59,17 @@ const grade_path = './grades.json';
         await page.locator(used_selector).click();
       }
 
+      await page.waitForLoadState('networkidle');
+      
       if (page.url().includes("accounts.google.com")) {
         // fill password
         await page.waitForSelector('input[type="password"]', { timeout: 10000 });
         await page.fill('input[type="password"]', password);
         await page.locator('#passwordNext').click();
+        
+        // wait until back on Schoology
+        await page.waitForURL(`${base_url}/grades/grades`, { timeout: 30000 });
       }
-      
-      // wait until back on Schoology
-      await page.waitForURL(`${base_url}/grades/grades`, { timeout: 30000 });
 
       // save session for next run
       await context.storageState({ path: state_path });
