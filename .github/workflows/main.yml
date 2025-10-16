@@ -2,10 +2,10 @@ name: Update Grades
 
 on:
   workflow_dispatch:
-  schedule:
+  # schedule:
     # runs hourly from 8 AM to 9 PM PST
-    - cron: '0 15-23 * * *'
-    - cron: '0 0-4 * * *'
+    # - cron: '0 15-23 * * *'
+    # - cron: '0 0-4 * * *'
 
 permissions:
   contents: write
