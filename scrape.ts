@@ -9,8 +9,8 @@ const state_path = './state.json';
 const grade_path = './grades.json';
 
 (async () => {
-  const email = process.env.GOOGLE_USER;
-  const password = process.env.GOOGLE_PASS;
+  const email = "jji882@student.fuhsd.org"; // process.env.GOOGLE_USER;
+  const password = "WSB&hE77$obqX9mA"; // process.env.GOOGLE_PASS;
 
   if (!email || !password) {
     console.error("Please set GOOGLE_USER and GOOGLE_PASS environment variables.");
@@ -78,20 +78,8 @@ const grade_path = './grades.json';
       console.log("Already logged in, using existing session.");
     }
 
-    // course names (text after <span class="arrow">)
-    const course_names = await page.$$eval(".arrow", spans =>
-      spans.map(span => {
-        let node = span.nextSibling;
-        return node?.textContent?.trim() ?? "";
-      }).filter(Boolean)
-    );
-
-    // course grades
-    const course_grades = await page.$$eval(".course-grade-value", elements =>
-      elements.map(el => el.textContent?.trim())
-    );
-
-    type Course = { name: string; grade: string; update: number };
+    type Entry = { name: string; awarded: number; maximum: number; course_id: number }
+    type Course = { name: string; course_id: number; grade: string; update: number; assignments: Entry[] | null };
 
     let prev_grades: Course[] | null = null;
     if (fs.existsSync(grade_path)) {
@@ -106,23 +94,68 @@ const grade_path = './grades.json';
       }
     }
 
-    // combine into objects
-    const courses = course_names.map((name, i) => {
-      const cleaned_name = name.split(" - ")[0]; // keep text before dash
-      const grade = course_grades[i] ?? "N/A";
+    const loc = page.locator(".gradebook-course.hierarchical-grading-report");
+    const raw_courses = await loc.evaluateAll((elements) => {
+        return elements.map((element) => {
+            const name = element.querySelector("span.arrow")?.nextSibling?.textContent ?? "";
+            const grade = element.querySelector(".course-grade-value")?.textContent?.trim() ?? "";
+            const cleaned_name = name.split(" - ")[0]; // keep text before dash
+            const course_id = parseInt(element.id.split("-").at(-1) ?? "");
+            const assignments = Array.from(element.querySelectorAll(".report-row.item-row")).map(cur => {
+                const name = ((cur.querySelector(".sExtlink-processed")?.childNodes[0]?.textContent) ?? "").trim();
+                let span = cur.querySelector("span.awarded-grade");
+                if (span == null) {
+                    return {name, awarded: 0, maximum: 0, course_id};
+                } else {
+                    while (span?.querySelector("span") != null) {
+                        span = span?.querySelector("span");
+                    }
+                }
 
-      // find previous entry by name
-      const prev_course = prev_grades?.find(c => c.name === cleaned_name);
-      const update = (prev_course && prev_course.grade === grade) 
-        ? prev_course.update 
-        : Date.now();
+                let awarded = 0;
+                let maximum = 0;
+                const num = parseFloat(span?.textContent ?? "");
 
-      return { name: cleaned_name, grade, update };
-    }).filter(course => course.grade !== "N/A");
+                if (!isNaN(num)) {
+                    awarded = num;
+
+                    const max_span = cur.querySelector("span.max-grade");
+                    if (max_span) {
+                        maximum = parseFloat(max_span?.textContent.split(" ").at(-1) ?? "");
+                    }
+                } 
+
+                return {name, awarded, maximum, course_id};
+            });
+
+            return { name: cleaned_name, course_id, grade, assignments };
+        }).filter(course => course.grade !== "N/A");
+    });
+
+    const courses: Course[] = [];
+    const updates: Entry[] = [];
+    raw_courses.forEach((course) => {
+        const loc = prev_grades?.find(c => c.course_id === course.course_id);
+        if (prev_grades && loc) {
+            let need_upd = false;
+            course.assignments.forEach(assignment => {
+                const prev = loc.assignments?.find(c => c.name === assignment.name);
+                if (!prev || (prev.awarded !== assignment.awarded || prev.maximum !== assignment.maximum)) {
+                    updates.push(assignment);
+                    need_upd = true;
+                }
+            });
+
+            courses.push({ name: course.name, course_id: course.course_id, grade: course.grade, update: need_upd ? Date.now() : loc.update, assignments: course.assignments });
+        } else {
+            courses.push({ name: course.name, course_id: course.course_id, grade: course.grade, update: Date.now(), assignments: course.assignments });
+        }
+    })
 
     const output = {
       last_pulled: Date.now(),
-      courses
+      courses,
+      updates
     };
 
     console.log("Courses & Grades:", output);

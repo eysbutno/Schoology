@@ -32,6 +32,34 @@ const time_elapsed = (diff) => {
   return { upd_text: `${seconds} ${seconds === 1 ? "second" : "seconds"} ago`, recent_upd };
 };
 
+const format_grade = (grade) => {
+  const score_match = grade.match(/\d+(\.\d+)?/);
+  const score = score_match ? parseFloat(score_match[0]) : null;
+
+  const letter_match = grade.match(/\b[A-F][+-]?/i);
+  let letter = letter_match ? letter_match[0].toUpperCase() : null;
+
+  if (score === null) return grade;
+
+  if (!letter) {
+    if (score >= 97) letter = "A+";
+    else if (score >= 93) letter = "A";
+    else if (score >= 90) letter = "A-";
+    else if (score >= 87) letter = "B+";
+    else if (score >= 83) letter = "B";
+    else if (score >= 80) letter = "B-";
+    else if (score >= 77) letter = "C+";
+    else if (score >= 73) letter = "C";
+    else if (score >= 70) letter = "C-";
+    else if (score >= 67) letter = "D+";
+    else if (score >= 63) letter = "D";
+    else if (score >= 60) letter = "D-";
+    else letter = "F";
+  }
+
+  return `${letter} (${score}%)`;
+};
+
 // --- Load Grades ---
 async function load_grades() {
   const fm = FileManager.local();
@@ -57,11 +85,29 @@ async function load_grades() {
   }
 }
 
-// --- Main Widget ---
 const grades_json = await load_grades();
 const grades = grades_json.courses;
+const notifs = grades_json.updates;
 const last_upd = grades_json.last_pulled;
 
+for (const upd_obj of notifs) {
+  const { name, awarded, maximum, course_id } = upd_obj;
+
+  const pct = (awarded / maximum) * 100;
+  const p = pct.toFixed(1);
+
+  const n = new Notification();
+  n.title = "New Grade Posted";
+  n.subtitle = name;
+  n.body = `${awarded} / ${maximum} (${p}%)`;
+  n.sound = "default";
+  n.threadIdentifier = "grades";
+  n.openURL(`schoology://course/${course_id}`);
+
+  n.schedule();
+}
+
+// --- Main Widget ---
 const widget = new ListWidget();
 widget.setPadding(15, 15, 15, 15);
 widget.addSpacer(15);
@@ -85,9 +131,10 @@ for (const grade_obj of grades) {
 
   const grade_stack = row_stack.addStack();
   grade_stack.size = new Size(80, NORMAL_FONT + 3);
-  const grade_text = grade_stack.addText(grade_obj.grade);
+  const grade_value = format_grade(grade_obj.grade);
+  const grade_text = grade_stack.addText(grade_value);
   grade_text.font = Font.mediumSystemFont(NORMAL_FONT);
-  grade_text.textColor = grade_color(grade_obj.grade);
+  grade_text.textColor = grade_color(grade_value);
   grade_text.rightAlignText();
   grade_stack.addSpacer();
 
