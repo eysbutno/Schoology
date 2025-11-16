@@ -102,7 +102,7 @@ for (const upd_obj of notifs) {
   n.body = `${awarded} / ${maximum} (${p}%)`;
   n.sound = "default";
   n.threadIdentifier = "grades";
-  n.openURL(`schoology://course/${course_id}`);
+  n.openURL = `schoology://course/${course_id}`;
 
   n.schedule();
 }
