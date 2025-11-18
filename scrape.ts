@@ -140,7 +140,7 @@ const grade_path = './grades.json';
             let need_upd = false;
             course.assignments.forEach(assignment => {
                 const prev = loc.assignments?.find(c => c.name === assignment.name);
-                if (!prev || (prev.awarded !== assignment.awarded || prev.maximum !== assignment.maximum)) {
+                if ((!prev || (prev.awarded !== assignment.awarded || prev.maximum !== assignment.maximum)) && assignment.maximum > 0) {
                     updates.push(assignment);
                     need_upd = true;
                 }
