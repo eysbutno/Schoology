@@ -60,12 +60,12 @@ const format_grade = (grade) => {
   return `${letter} (${score}%)`;
 };
 
+const fm = FileManager.local();
+const data_dir = fm.joinPath(fm.documentsDirectory(), ".cache");
+if (!fm.fileExists(data_dir)) fm.createDirectory(data_dir);
+
 // --- Load Grades ---
 async function load_grades() {
-  const fm = FileManager.local();
-  const data_dir = fm.joinPath(fm.documentsDirectory(), ".cache");
-  if (!fm.fileExists(data_dir)) fm.createDirectory(data_dir);
-
   const data_path = fm.joinPath(data_dir, "grades_cache.json");
 
   try {
@@ -85,13 +85,29 @@ async function load_grades() {
   }
 }
 
+// --- Load Previous Notifs --- 
+const notifs_path = fm.joinPath(data_dir, "notifs_cache.json");
+let notifs_cache = null;
+if (fm.fileExists(notifs_path)) {
+  notifs_cache = JSON.parse(fm.readString(notifs_path));
+}
+
 const grades_json = await load_grades();
 const grades = grades_json.courses;
 const notifs = grades_json.updates;
 const last_upd = grades_json.last_pulled;
+const new_upd = [];
 
 for (const upd_obj of notifs) {
-  const { name, awarded, maximum, course_id } = upd_obj;
+  const { value: {name, awarded, maximum, course_id}, time } = upd_obj;
+  const DAY = 24 * 60 * 60 * 1000;
+  const loc = notifs_cache?.find(c => c.value === value);
+  if (loc && time - loc.time <= DAY) {
+    new_upd.push(loc);
+    continue;
+  }
+
+  new_upd.push(upd_obj);
 
   const pct = (awarded / maximum) * 100;
   const p = pct.toFixed(1);
@@ -106,6 +122,8 @@ for (const upd_obj of notifs) {
 
   n.schedule();
 }
+
+fm.writeString(notifs_path, JSON.stringify(new_upd));
 
 // --- Main Widget ---
 const widget = new ListWidget();
