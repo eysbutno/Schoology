@@ -9,8 +9,8 @@ const state_path = './state.json';
 const grade_path = './grades.json';
 
 (async () => {
-  const email = "jji882@student.fuhsd.org"; // process.env.GOOGLE_USER;
-  const password = "WSB&hE77$obqX9mA"; // process.env.GOOGLE_PASS;
+  const email = process.env.GOOGLE_USER;
+  const password = process.env.GOOGLE_PASS;
 
   if (!email || !password) {
     console.error("Please set GOOGLE_USER and GOOGLE_PASS environment variables.");
@@ -80,13 +80,17 @@ const grade_path = './grades.json';
 
     type Entry = { name: string; awarded: number; maximum: number; course_id: number }
     type Course = { name: string; course_id: number; grade: string; update: number; assignments: Entry[] | null };
+    type Update = { value: Entry; time: number };
 
     let prev_grades: Course[] | null = null;
+    let prev_update: Update[] | null = null;
     if (fs.existsSync(grade_path)) {
       try {
         const data = fs.readFileSync(grade_path, 'utf-8');
         if (data.trim().length > 0) {
-          prev_grades = JSON.parse(data).courses;
+          const parsed = JSON.parse(data);
+          prev_grades = parsed.courses;
+          prev_update = parsed.updates;
           console.log("Loaded previous grades:", prev_grades);
         }
       } catch (err) { 
@@ -133,7 +137,7 @@ const grade_path = './grades.json';
     });
 
     const courses: Course[] = [];
-    const updates: Entry[] = [];
+    const updates: Update[] = [];
     raw_courses.forEach((course) => {
         const loc = prev_grades?.find(c => c.course_id === course.course_id);
         if (prev_grades && loc) {
@@ -141,7 +145,7 @@ const grade_path = './grades.json';
             course.assignments.forEach(assignment => {
                 const prev = loc.assignments?.find(c => c.name === assignment.name);
                 if ((!prev || (prev.awarded !== assignment.awarded || prev.maximum !== assignment.maximum)) && assignment.maximum > 0) {
-                    updates.push(assignment);
+                    updates.push({ value: assignment, time: Date.now() })
                     need_upd = true;
                 }
             });
@@ -151,6 +155,15 @@ const grade_path = './grades.json';
             courses.push({ name: course.name, course_id: course.course_id, grade: course.grade, update: Date.now(), assignments: course.assignments });
         }
     })
+
+    if (prev_update) {
+      for (const upd of prev_update) {
+        const DAY = 24 * 60 * 60 * 1000;
+        if (Date.now() - upd.time <= DAY) {
+          updates.push(upd);
+        }
+      }
+    }
 
     const output = {
       last_pulled: Date.now(),
