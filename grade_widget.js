@@ -102,7 +102,7 @@ for (const upd_obj of notifs) {
   const { value, time } = upd_obj;
   const { name, awarded, maximum, course_id } = value;
   const DAY = 24 * 60 * 60 * 1000;
-  const loc = notifs_cache?.find(c => c.value === value);
+  const loc = notifs_cache?.find(c => JSON.stringify(c.value) === JSON.stringify(value));
   if (loc && time - loc.time <= DAY) {
     new_upd.push(loc);
     continue;
