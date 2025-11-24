@@ -99,7 +99,8 @@ const last_upd = grades_json.last_pulled;
 const new_upd = [];
 
 for (const upd_obj of notifs) {
-  const { value: {name, awarded, maximum, course_id}, time } = upd_obj;
+  const { value, time } = upd_obj;
+  const { name, awarded, maximum, course_id } = value;
   const DAY = 24 * 60 * 60 * 1000;
   const loc = notifs_cache?.find(c => c.value === value);
   if (loc && time - loc.time <= DAY) {
