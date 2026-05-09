@@ -98,6 +98,10 @@ const grade_path = './grades.json';
       }
     }
 
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    await page.waitForSelector(".gradebook-course.hierarchical-grading-report", { timeout: 15000 });
+    await sleep(500);
+
     const loc = page.locator(".gradebook-course.hierarchical-grading-report");
     const raw_courses = await loc.evaluateAll((elements) => {
         return elements.map((element) => {
