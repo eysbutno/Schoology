@@ -17,7 +17,10 @@ const grade_path = './grades.json';
     process.exit(1);
   }
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    channel: 'chrome',
+    headless: true
+  });
 
   // only include storage_state if the file exists
   const context_options: any = { ignoreHTTPSErrors: true };
@@ -185,6 +188,7 @@ const grade_path = './grades.json';
       }
     });
   } catch (err) {
+    await page.screenshot({ path: 'error.png', fullPage: true }); // add this
     console.error("Error:", err);
   } finally {
     await browser.close();
